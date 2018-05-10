@@ -2,10 +2,6 @@ import sqlite3
 import pandas as pd
 import requests
 
-# connect to database
-conn = sqlite3.connect('AUBsmall.sqlite')
-dataset = pd.read_sql_query('select * from Observations;', conn)
-conn.close()
 
 # pull JWT
 url_JWT = 'https://auth.opensensors.com/auth/login'
@@ -23,15 +19,31 @@ parameters = {'fromDate': '2018-02-02',
            'cursor': ''}
 
 os_data_request = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()
-heatmaps = os_data_request['items'][0]['heatmap']
+# heatmaps = os_data_request['items'][0]['heatmap']
+
+# data = pd.DataFrame.from_dict(os_data_request)
 
 # import json
 # decoded = json.loads(os_data_request.encoding)
 
-"""
+# connect to database
 table_name = 'Observations'
-column_name = 'id'
-day = 0
+col_name_0 = 'time'
+col_name_1 = 'x'
+col_name_2 = 'y'
+col_name_3 = 'value'
+
+conn = sqlite3.connect('AUBsmall_Col.sqlite')
+dataset = pd.read_sql_query('select * from Observations;', conn)
+for v in range (0, len(os_data_request['items'][0]['heatmap'])):        
+    conn.execute('SELECT * FROM {tn} WHERE {cn} = {d}'.\
+                 format(tn = table_name, cn = col_name_0, d = os_data_request['items'][0]['date'])
+    
+conn.close()
+
+
+"""
+
 
 c.execute('SELECT * FROM {tn} WHERE {cn} = {d}'.\
         format(tn = table_name, cn = column_name, d = day))
