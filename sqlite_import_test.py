@@ -1,36 +1,32 @@
 import sqlite3
 import pandas as pd
 import requests
-from requests_oauthlib import OAuth1
 
+# connect to database
 conn = sqlite3.connect('AUBsmall.sqlite')
-
 dataset = pd.read_sql_query('select * from Observations;', conn)
-
 conn.close()
 
 # pull JWT
-
 url_JWT = 'https://auth.opensensors.com/auth/login'
-auth = OAuth1('QYi7JGgICN2wKLP0K1cof8v6veepaSu97R31G0m7')
-requests.get(url_JWT, auth = auth)
-
+headers_JWT = { 'x-api-key': 'UoheJ3fp0w7CJisPi26NzNOw2rEPyMj67ovksMo1' }
+API_access_token = requests.get(url_JWT, headers = headers_JWT, timeout = 1000).json()
 
 # pulling data from opensensors api
-
-
 url_GPM = 'https://api.opensensors.com/getProjectMessages';
-payload = {'fromDate': '2018-02-02',
+headers_GPM = { 'Authorization': API_access_token.get('jwtToken') }
+parameters = {'fromDate': '2018-02-02',
            'toDate': '2018-02-03',
            'projectUri': 'zaha-hadid',
            'size': '500',
            'type': 'modcamHeatmap',
            'cursor': ''}
 
-r = requests.get(url_GPM, params=payload)
+os_data_request = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()
+heatmaps = os_data_request['items'][0]['heatmap']
 
-
-
+# import json
+# decoded = json.loads(os_data_request.encoding)
 
 """
 table_name = 'Observations'
@@ -42,6 +38,3 @@ c.execute('SELECT * FROM {tn} WHERE {cn} = {d}'.\
 
 all_rows = c.fetchall()
 """
-
-
-
