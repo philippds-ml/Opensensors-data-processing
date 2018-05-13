@@ -10,11 +10,11 @@ def create_connection(db_file):
     """
     try:
         conn = sqlite3.connect(db_file)
-        print(sqlite3.version)
+        return conn
     except Error as e:
         print(e)
-    finally:
-        conn.close()
+ 
+    return None
 
 # create database table
 def create_table(conn, create_table_sql):

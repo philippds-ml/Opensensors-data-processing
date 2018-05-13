@@ -22,27 +22,80 @@ parameters = {'fromDate': '2018-02-02',
 os_data_request = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()
 
 # create sqlite database
-from os_helper import create_connection
-create_connection("os_reading_AUB.sqlite")
 
 # create table in database
-
-# 1. creating sqlite task
-table_name = str(os_data_request["nextCursor"])
+# creating sqlite task
+table_name = '\'' + str(os_data_request["nextCursor"]) + '\''
 
 sql_create_projects_table = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
-                                        items integer PRIMARY KEY,
-                                        lastCursor text NOT NULL,
-                                        nextCursor text,
-                                        total text
+                                        \'date\' INTEGER,
+                                        \'dayOfTheWeek\' INTEGER,
+                                        \'deviceId\' TEXT,
+                                        \'heartbeat\' TEXT,
+                                        \'x\' INTEGER,
+                                        \'y\' INTEGER,
+                                        \'heatmap\' INTEGER,
+                                        \'tags\' TEXT,  
+                                        \'type\' TEXT
                                     ); """
 
 
 
+# create a database connection
+conn = sqlite3.connect("os_reading_AUB.sqlite")
+c = conn.cursor()
+c.execute(sql_create_projects_table)
+
+data = os_data_request['items'][0]
+heatmap_len = len(data['heatmap'])
+x_len = data['heatmap'][0]
+y_len = data['heatmap'][1]
+
+x = 0
+y = 0
+
+for v in range (2, heatmap_len):
+    
+    sql_repace_or_insert = """INSERT OR REPLACE INTO """ + table_name + """ (date, dayOfTheWeek, deviceId, heartbeat, x, y, heatmap, tags, type) 
+                                        VALUES (""" + str(data['date']) + """,
+                                                """ + str(data['dayOfTheWeek']) + """,
+                                                """ + data['deviceId'] + """,
+                                                """ + str(data['heartbeat']) + """,
+                                                """ + str(x) + """,
+                                                """ + str(y) + """,
+                                                COALESCE((SELECT heatmap FROM """ + table_name + """ WHERE x = """ + str(x) + """ AND y = """ + str(y) + """ AND date = """ + str(data['date']) + """), """ + str(data['heatmap'][v]) + """),
+                                                """ + str(data['tags'][1]) + """,
+                                                """ + data['type'] + """
+                                                ); """
+    
+    if(x == x_len):
+        x = 0
+        y += 1
+        print(y)
+    
+    
+    # sql_insert = """ INSERT INTO """ + table_name + """(date, dayOfTheWeek, deviceId, heartbeat, x, y, heatmap, tags, types) VALUES(?,?,?,?,?,?,?,?,?) """
+    task_1 = (data['date'], data['dayOfTheWeek'], data['deviceId'], str(data['heartbeat']), x, y, data['heatmap'][v], data['tags'][1], data['type'])
+
+    #c.execute(sql_repace_or_insert, task_1)
+    c.execute(sql_repace_or_insert)
+    
+    x += 1
+
+conn.commit()
+conn.close()
 
 
- 
+# """ + table_name + """
+
 """
+# selecting items from database
+for v in range (0, len(os_data_request['items'][0]['heatmap'])):
+    #value = os_data_request['items'][0]['heatmap'][v]
+    value = 1
+    c.execute('SELECT * FROM {tn} WHERE {cn} = {val}'.\
+                 format(tn = table_name, cn = col_name_0, val = value))
+
 # heatmaps = os_data_request['items'][0]['heatmap']
 # data = pd.DataFrame.from_dict(os_data_request)
 # import json
