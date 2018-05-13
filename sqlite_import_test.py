@@ -1,3 +1,4 @@
+# Importing libraries
 import sqlite3
 import pandas as pd
 import requests
@@ -19,10 +20,31 @@ parameters = {'fromDate': '2018-02-02',
            'cursor': ''}
 
 os_data_request = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()
+
+# create sqlite database
+from os_helper import create_connection
+create_connection("os_reading_AUB.sqlite")
+
+# create table in database
+
+# 1. creating sqlite task
+table_name = str(os_data_request["nextCursor"])
+
+sql_create_projects_table = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
+                                        items integer PRIMARY KEY,
+                                        lastCursor text NOT NULL,
+                                        nextCursor text,
+                                        total text
+                                    ); """
+
+
+
+
+
+ 
+"""
 # heatmaps = os_data_request['items'][0]['heatmap']
-
 # data = pd.DataFrame.from_dict(os_data_request)
-
 # import json
 # decoded = json.loads(os_data_request.encoding)
 
@@ -42,11 +64,12 @@ for v in range (0, len(os_data_request['items'][0]['heatmap'])):
 conn.close()
 
 
-"""
+
 
 
 c.execute('SELECT * FROM {tn} WHERE {cn} = {d}'.\
         format(tn = table_name, cn = column_name, d = day))
 
 all_rows = c.fetchall()
+
 """
