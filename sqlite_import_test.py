@@ -39,6 +39,22 @@ sql_create_projects_table = """ CREATE TABLE IF NOT EXISTS """ + table_name + ""
                                         \'type\' TEXT
                                     ); """
 
+data = os_data_request['items'][0]
+heatmap_len = len(data['heatmap'])
+x_len = data['heatmap'][0]
+y_len = data['heatmap'][1]
+
+sql_create_projects_table_01 = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
+                                        date INTEGER,
+                                        tags TEXT,
+                                        x_res INTEGER,
+                                        y_res INTEGER,
+                                        """
+                                        + 
+                                        
+                                        """
+
+                                    ); """
 
 
 # create a database connection
@@ -46,10 +62,7 @@ conn = sqlite3.connect("os_reading_AUB.sqlite")
 c = conn.cursor()
 c.execute(sql_create_projects_table)
 
-data = os_data_request['items'][0]
-heatmap_len = len(data['heatmap'])
-x_len = data['heatmap'][0]
-y_len = data['heatmap'][1]
+
 
 x = 0
 y = 0
