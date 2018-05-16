@@ -41,47 +41,34 @@ heatmap_values = heatmap_values[1:-1]
 heatmap_values = heatmap_values.replace('\"', '')
 
 sql_create_projects_table_01 = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
-                                        date INTEGER,
+                                        date INTEGER UNIQUE,
                                         tags TEXT,
                                         x_res INTEGER,
                                         y_res INTEGER,
                                         """ + str(heatmap_values) + """); """
-
 
 # create a database connection
 conn = sqlite3.connect("os_reading_AUB_01.sqlite")
 c = conn.cursor()
 c.execute(sql_create_projects_table_01)
 
-heatmap_values = heatmap_values.replace('\'', '')
-heatmap_values = heatmap_values.replace('INTEGER', '')
+heatmap_column_names = []
+for v in range(0, len(data['heatmap']) - 2):
+    heatmap_column_names.append(str(v))
 
-x = 0
-y = 0
+sql_replace_or_insert = """INSERT OR IGNORE INTO """ + table_name + """ (
+                                        date,
+                                        tags,
+                                        x_res,
+                                        y_res,
+                                        """ + str(heatmap_column_names)[1:-1] + """)
+                                        VALUES (
+                                        """ + str(data['date']) + """,
+                                        """ + '\'' + str(data['tags'][1]) + '\'' + """,
+                                        """ + str(data['heatmap'][0]) + """,
+                                        """ + str(data['heatmap'][1]) + """,
+                                        """ + str(data['heatmap'][2:])[1:-1] + """); """
 
-for v in range (2, heatmap_len):
-    
-    sql_repace_or_insert = """INSERT OR REPLACE INTO """ + table_name + """ (date, tags, x_res, y_res, """ + heatmap_values + """) 
-                                        VALUES (""" + str(data['date']) + """,
-                                                """ + str(data['tags'][1]) + """,
-                                                """ + str(data['date']) + """,
-                                                COALESCE((SELECT heatmap FROM """ + table_name + """ WHERE x = """ + str(x) + """ AND y = """ + str(y) + """ AND date = """ + str(data['date']) + """), """ + str(data['heatmap'][v]) + """),
-                                                
-                                                """ + data['type'] + """
-                                                ); """
-    
-    if(x == x_len):
-        x = 0
-        y += 1
-        print(y)
-    
-    # sql_insert = """ INSERT INTO """ + table_name + """(date, dayOfTheWeek, deviceId, heartbeat, x, y, heatmap, tags, types) VALUES(?,?,?,?,?,?,?,?,?) """
-    task_1 = (data['date'], data['dayOfTheWeek'], data['deviceId'], str(data['heartbeat']), x, y, data['heatmap'][v], data['tags'][1], data['type'])
-
-    #c.execute(sql_repace_or_insert, task_1)
-    c.execute(sql_repace_or_insert)
-    
-    x += 1
-
+c.execute(sql_replace_or_insert)
 conn.commit()
 conn.close()
