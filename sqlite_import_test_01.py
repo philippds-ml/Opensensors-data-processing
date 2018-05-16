@@ -12,8 +12,8 @@ API_access_token = requests.get(url_JWT, headers = headers_JWT, timeout = 1000).
 # pulling data from opensensors api
 url_GPM = 'https://api.opensensors.com/getProjectMessages';
 headers_GPM = { 'Authorization': API_access_token.get('jwtToken') }
-parameters = {'fromDate': '2018-02-02',
-           'toDate': '2018-02-03',
+parameters = {'fromDate': '2018-02-04',
+           'toDate': '2018-02-05',
            'projectUri': 'zaha-hadid',
            'size': '500',
            'type': 'modcamHeatmap',
@@ -40,7 +40,7 @@ heatmap_values = str(heatmap_values)
 heatmap_values = heatmap_values[1:-1]
 heatmap_values = heatmap_values.replace('\"', '')
 
-sql_create_projects_table_01 = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
+sql_create_table = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
                                         date INTEGER UNIQUE,
                                         tags TEXT,
                                         x_res INTEGER,
@@ -50,7 +50,7 @@ sql_create_projects_table_01 = """ CREATE TABLE IF NOT EXISTS """ + table_name +
 # create a database connection
 conn = sqlite3.connect("os_reading_AUB_01.sqlite")
 c = conn.cursor()
-c.execute(sql_create_projects_table_01)
+c.execute(sql_create_table)
 
 heatmap_column_names = []
 for v in range(0, len(data['heatmap']) - 2):
