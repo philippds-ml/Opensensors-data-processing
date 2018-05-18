@@ -178,40 +178,18 @@ arrs = []
 temp_arr = []
 for m in range(5, heatmap_length - 2):
     
-    if (m - 5) != 0 and (m - 5) % 39 == 0:
+    if (m - 5) != 0 and (m - 5) % 38 == 0:
         temp_arr = np.array(temp_arr)
         arrs.append(temp_arr)
         temp_arr = []
-        temp_arr.append(int(all_rows[0][m]))
+        temp_arr.append(int(all_rows[14][m]))
     else:
-        temp_arr.append(int(all_rows[0][m]))
-    if m == heatmap_length - 3:
-        temp_arr = np.array(temp_arr)
-        arrs.append(temp_arr)
-        print("placing last")
+        temp_arr.append(int(all_rows[14][m]))
 
-arr2d = np.array(arrs)
+aaa = np.array(arrs)
 
-a = np.random.random((160, 160))
-plt.imshow(a, cmap='hot', interpolation='nearest')
+plt.imshow(aaa, cmap='hot', interpolation='nearest')
 plt.show()
-
-testotest = []
-test = []
-
-test.append(0)
-test.append(8)
-test.append(3)
-test.append(1)
-
-test_array = np.array(test)
-test_array1 = np.array(test)
-
-testotest.append(test_array)
-testotest.append(test_array1)
-
-testotest = np.array(testotest)
-
 
 # Visualising averages
 X = []
