@@ -1,8 +1,10 @@
 # Importing libraries
 import sqlite3
-import pandas as pd
 import requests
 import time
+import numpy as np
+import matplotlib.pyplot as plt
+import math
 
 ##############################################################################
 # OS PULL
@@ -15,9 +17,10 @@ API_access_token = requests.get(url_JWT, headers = headers_JWT, timeout = 1000).
 # pulling data from opensensors api
 url_GPM = 'https://api.opensensors.com/getProjectMessages';
 headers_GPM = { 'Authorization': API_access_token.get('jwtToken') }
-parameters = {'fromDate': '2018-02-23',
-           'toDate': '2018-03-01',
+parameters = {'fromDate': '2018-05-01',
+           'toDate': '2018-05-18',
            'projectUri': 'zaha-hadid',
+           'deviceId': '5a5609dc1ac137000520d91f',
            'size': '500',
            'type': 'modcamHeatmap',
            'cursor': ''}
@@ -52,12 +55,14 @@ for k in range(0, item_number):
 heatmap_length = len(data[0]['heatmap'])
 
 ##############################################################################
-# CREATE DATABASE + TABLE
+# OPENING DATA BASE FILE
 
 conn = sqlite3.connect("os_reading_AUB_03.sqlite")
 c = conn.cursor()
-# table_name = '\'' + str(os_data_request["nextCursor"]) + '\''
 table_name = 'OS_READING_AUB'
+
+##############################################################################
+# CREATING NEW DATABASE
 heatmap_values = [''] * (heatmap_length - 2)
 
 for i in range(0, heatmap_length - 2):
@@ -81,6 +86,9 @@ c.execute(sql_create_table)
 ##############################################################################
 # INSERT DATA
 
+conn = sqlite3.connect("os_reading_AUB_03.sqlite")
+c = conn.cursor()
+
 heatmap_column_names = []
 for v in range(0, heatmap_length - 2):
     heatmap_column_names.append(str(v))
@@ -102,7 +110,128 @@ for p in range(0, item_number):
                                         """ + str(data[p]['heatmap'][2:])[1:-1] + """); """
 
     c.execute(sql_replace_or_insert)
+    conn.commit()
 
-conn.commit()
-conn.close()
+
+conn.close() 
+
+##############################################################################
+# INSERT DATA
+
+conn = sqlite3.connect("os_reading_AUB_03.sqlite")
+c = conn.cursor()
+
+dataCopy = c.execute("select count(*) from """ + table_name)
+row_count = dataCopy.fetchone()
+row_count = row_count[0]
+
+c.execute('SELECT * FROM {tn}'.\
+              format(tn = table_name))
+all_rows = c.fetchall()
+
+
+
+
+
+
+outlier_sum = []
+
+for r in range(5, heatmap_length - 2 + 5):    
+    # sort list
+    sorted_list = []
+    for g in range(0, row_count):
+        sorted_list.append(all_rows[g][r])
+    sorted(sorted_list)
+    
+    # find lower and upper quartile and IQR
+    x_025 = sorted_list[math.floor(row_count * 0.25 + 1) - 1]
+    x_075 = sorted_list[math.floor(row_count * 0.75 + 1) - 1]
+    
+    iqr = x_075 - x_025
+    
+    # 
+    temp_outlier_sum = 0
+    for m in range(5, heatmap_length - 2 + 5):
+        if all_rows[r][m] > iqr * 1.5:
+            temp_outlier_sum += 1
+    outlier_sum.append(temp_outlier_sum)
+
+
+
+ave = []
+for r in range(5, heatmap_length - 2 + 5):    
+    value_sum = 0
+    for g in range(0, row_count): 
+        value_sum += int(all_rows[g][r])
+    ave.append(value_sum / row_count)
+
+
+for b in range(0, row_count):    
+    temp_outlier_sum = 0
+    for m in range(5, heatmap_length - 2 + 5):
+        if (math.sqrt(math.pow(ave[m - 5] - all_rows[b][m], 2)) > (ave[m - 5] * 1.5)):
+            temp_outlier_sum += 1
+    outlier_sum.append(temp_outlier_sum)
+
+# Visualising the Training set results
+arrs = []
+temp_arr = []
+for m in range(5, heatmap_length - 2):
+    
+    if (m - 5) != 0 and (m - 5) % 39 == 0:
+        temp_arr = np.array(temp_arr)
+        arrs.append(temp_arr)
+        temp_arr = []
+        temp_arr.append(int(all_rows[0][m]))
+    else:
+        temp_arr.append(int(all_rows[0][m]))
+    if m == heatmap_length - 3:
+        temp_arr = np.array(temp_arr)
+        arrs.append(temp_arr)
+        print("placing last")
+
+arr2d = np.array(arrs)
+
+a = np.random.random((160, 160))
+plt.imshow(a, cmap='hot', interpolation='nearest')
+plt.show()
+
+testotest = []
+test = []
+
+test.append(0)
+test.append(8)
+test.append(3)
+test.append(1)
+
+test_array = np.array(test)
+test_array1 = np.array(test)
+
+testotest.append(test_array)
+testotest.append(test_array1)
+
+testotest = np.array(testotest)
+
+
+# Visualising averages
+X = []
+for n in range(1, heatmap_length - 1):
+    X.append(n)
+
+plt.scatter(X, ave, color = 'red')
+plt.title('Visualizing Average Values')
+plt.xlabel('index')
+plt.ylabel('averege count')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
 
