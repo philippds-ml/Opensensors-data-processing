@@ -5,6 +5,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import pandas as pd
 
 ##############################################################################
 # OS PULL
@@ -210,27 +211,165 @@ def plot_heatmaps(indexes, count, col):
         heatmap_0 = np.array(arrs)
         
         plt.subplot(math.ceil(count / col), col, g + 1)
-        plt.imshow(heatmap_0, cmap='hot', interpolation='nearest')
+        plt.imshow(heatmap_0, cmap='hot', interpolation='gaussian')
  
-        plt.title(all_rows[indexes[g]][1], loc = 'left', fontsize = 5)
+        title = all_rows[indexes[g]][1] + " | " + str(outlier_flag[indexes[g]])
+    
+        plt.title(title, loc = 'left', fontsize = 7)
         arrs = []
         temp_arr = []
-       
+        
+        
+        
+        
+        
+        
+        for i in range(0, 897):
+            if(i < 8):
+                plt.scatter(i, 0, color = 'blue', s = 1)
+            if((i >= 39 and i % 39 < 8) and (int(i / 39) < 12)):
+                plt.scatter(i % 39, int(i / 39), color = 'blue', s = 10)
+            
+            if(int(i / 39) >= 18 and i % 39 > 10 and i % 39 <= 25 and (int(i / 39) < 21 or i % 39 > 14 or i % 39 < 12)):
+                plt.scatter(i % 39, int(i / 39), color = 'red', s = 10)
+                
+            
+            if(int(i / 39) >= 10 and i % 39 > 25):
+                plt.scatter(i % 39, int(i / 39), color = 'green', s = 10)
+        
+        plt.scatter(7, 4, color = 'cyan', s = 30)
+        plt.scatter(7, 14, color = 'cyan', s = 30)
+        plt.scatter(18, 11, color = 'cyan', s = 30)
+        
 
     plt.show()
 
+outlier_index_cropped = []
 
-plot_heatmaps(outlier_index, 40, 8)
-
-
-
-
-
+for i in outlier_index:
+    if(int(outlier_flag[i]) > 400):
+        outlier_index_cropped.append(i)
 
 
+plot_heatmaps(outlier_index_cropped, 1, 1)
+
+
+# SQLite database to pandas dataframe
+conn = sqlite3.connect("os_reading_AUB_03.sqlite")
+df = pd.read_sql_query("SELECT * FROM " + table_name, conn)
+
+X = df.iloc[:, :].values # -1 means all the columns except the last one
+y = df.iloc[:, 1].values # dependend variable
+
+
+df = df.iloc[:, 5:]
+
+count_ai = 0
+count_code = 0
+count_vr = 0
+count_circulation = 0
+time_index = 0
+
+ai_time = [0] * 24
+code_time = [0] * 24
+vr_time = [0] * 24
+
+circulation_time = [0] * 24
+exhibition_time = [0] * 24
+
+X = [0] * 24
+
+for row in df.iterrows():    
+    time_temp = 0
+    exhibition_temp = 0
+    
+    ai_temp = 0
+    code_temp = 0
+    vr_temp = 0
+    
+    for i in range(0, 897):
+        if(i < 8):
+            count_ai += row[1][i]
+            exhibition_temp += row[1][i]
+            ai_temp += row[1][i]
+        elif((i >= 39 and i % 39 < 8) and (int(i / 39) < 12)):
+            count_ai += row[1][i]
+            exhibition_temp += row[1][i] 
+            ai_temp += row[1][i]  
+        elif(int(i / 39) >= 18 and i % 39 > 10 and i % 39 <= 25 and (int(i / 39) < 21 or i % 39 > 14 or i % 39 < 12)):
+            count_code += row[1][i]
+            exhibition_temp += row[1][i]
+            code_temp += row[1][i]  
+        elif(int(i / 39) >= 10 and i % 39 > 25):
+            count_vr += row[1][i]
+            exhibition_temp += row[1][i]
+            vr_temp += row[1][i]  
+        else:
+            count_circulation += row[1][i]
+            time_temp += row[1][i]
+    
+    circulation_time[time_index] += time_temp
+    exhibition_time[time_index] += exhibition_temp
+    ai_time[time_index] += ai_temp
+    code_time[time_index] += code_temp
+    vr_time[time_index] += vr_temp    
+    
+    if(time_index < 23):
+        time_index += 1
+    else:
+        time_index = 0
+
+count_total = count_ai + count_code + count_vr + count_circulation
+
+for t in range(0, len(circulation_time)):
+    X[t] = t
+    circulation_time[t] /= (count_total / 100)
+for t in range(0, len(circulation_time)):
+    exhibition_time[t] /= (count_total / 100)
+    ai_time[t] /= (count_total / 100)
+    code_time[t] /= (count_total / 100)
+    vr_time[t] /= (count_total / 100)
+
+count_total /= 100
+count_ai /= count_total
+count_code /= count_total
+count_vr /= count_total
+count_circulation /= count_total
+
+plt.xlabel('Hour')
+plt.ylabel('Percentage (%)')
+plt.plot(X, circulation_time, color = 'red', lw = 2, label = 'circulation usage')
+plt.plot(X, exhibition_time, color = 'blue', lw = 2, label = 'exhibition visit')
+plt.legend()
+plt.show()
+
+plt.xlabel('Hour')
+plt.ylabel('Percentage (%)')
+plt.plot(X, ai_time, color = 'red', lw = 2, label = 'ai exhibition visit')
+plt.plot(X, code_time, color = 'blue', lw = 2, label = 'code exhibition visit')
+plt.plot(X, vr_time, color = 'green', lw = 2, label = 'vr exhibition visit')
+plt.legend()
+plt.show()
+
+plt.ylabel('Percentage (%)')
+plt.bar([0, 1, 2], [(count_ai / (count_ai + count_code + count_vr)) * 100, (count_code / (count_ai + count_code + count_vr)) * 100, (count_vr / (count_ai + count_code + count_vr)) * 100], color = ['red', 'blue', 'green'])
+plt.xticks([0, 1, 2], ("AI visits", "Code visits", "VR visits"))
+plt.legen()
+plt.show()
 
 
 
+
+
+
+
+
+
+
+
+            
+            
+        
 
 
 
