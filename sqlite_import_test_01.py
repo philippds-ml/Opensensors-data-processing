@@ -19,7 +19,7 @@ def pull_data():
     url_GPM = 'https://api.opensensors.com/getProjectMessages';
     headers_GPM = { 'Authorization': API_access_token.get('jwtToken') }
     parameters = {'fromDate': '2018-02-27',
-                  'toDate': '2018-02-28',
+                  'toDate': '2018-02-29',
                   'projectUri': 'zaha-hadid',
                   'deviceId': '5a5609dc1ac137000520d91f',
                   'size': '500',
@@ -28,78 +28,95 @@ def pull_data():
     data = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()['items']
     
     print("CHECKING DATA PULL --------")
-    for o in range(0, len(data)):
-        print(str(data[o]['date']) + "   " + str((data[o]['date'] // 1000) // 3600 % 24))
+    print(len(data))
     
     return data
 
 # pre process data
 def preprocess_data(d):
     
-    # item['date'] // 1000) // 3600 % 24 != time_index
     data = d
-    hour = 0
     
+    # define duration of sequence
+    from datetime import datetime, timedelta
+
+    data_0 = data[0]['date']
+    first_time = datetime.fromtimestamp(data_0 // 1000)
+    first_time = first_time.replace(hour = 0, minute = 0, second = 0)
+    
+    data_last = data[len(data) - 1]['date']
+    last_time = datetime.fromtimestamp(data_last // 1000)
+    last_time = last_time.replace(hour = 0, minute = 0, second = 0)
+    
+    main_difference = (last_time - first_time).days
+    
+    data_full = [{}] * (main_difference * 2) * 24
+    
+    valid_item = {}
+    valid_item_index = -1
+
     for i in range(0, len(data)):
-        current_hour = (data[i]['date'] // 1000) // 3600 % 24
-        if(current_hour != hour):
-            data_temp = data[current_hour - hour]
-            data_date_temp = data[i]['date']
-            data_temp['date'] = data_date_temp - (current_hour - hour) * 3600000
-            data.insert(i, data_temp)
-            i -= 1
+        current_time = datetime.fromtimestamp(data[i]['date'] // 1000)
+        difference = current_time - first_time
+        index = (difference.seconds // 3600) + 24 * difference.days
+        data_full[index] = data[i]
+        if not('date' in valid_item):
+            valid_item = data[i]
+            valid_item_index = index
+
+    missing_indexes = []
+    for j in range(0, len(data_full)):
+        if not('date' in data_full[j]):
+            missing_indexes.append(j)
+            
+    heat_list = []
+    heat_list.append(valid_item['heatmap'][0])
+    heat_list.append(valid_item['heatmap'][1])
+    heat_list += [0] * (len(valid_item['heatmap']) - 2)
+    
+    for g in missing_indexes:
+        data_full[g] = {'date': valid_item['date'] + (g - valid_item_index) * 3600000}
+        data_full[g].update({'heatmap': heat_list})
+    
+        item_time = datetime.fromtimestamp(data_full[g]['date'] //1000).day
+        valid_item_time = datetime.fromtimestamp(valid_item['date'] //1000).day
         
-        if(hour < 23):
-            hour += 1
+        if(item_time == valid_item_time):
+            data_full[g].update({'dayOfTheWeek': valid_item['dayOfTheWeek']})
         else:
-            hour = 0
+            data_full[g].update({'dayOfTheWeek': (datetime.fromtimestamp(data_full[g]['date'] //1000)).today().weekday()})
     
-    
-    print("CHECKING DATA PULL --------")
-    for o in range(0, len(data)):
-        print(str(data[o]['date']) + "   " + str((data[o]['date'] // 1000) // 3600 % 24))
-    
-    
-    return data
-
-data = pull_data()
-data = preprocess_data(data)
-
-
-
-test_list = list(range(0,24))
-del test_list[12]
-del test_list[12]
-del test_list[12]
-
-hour = 0
-for i in range(0, len(test_list)):
-        if(test_list[i] != hour):
-            test_list.insert(i, data_temp)
-            i -= 1
-        
-        if(hour < 23):
-            hour += 1
-        else:
-            hour = 0
-    
+        data_full[g].update({'deviceId': valid_item['deviceId']})
+        data_full[g].update({'heartbeat': valid_item['heartbeat']})
+        data_full[g].update({'tags': valid_item['tags']})
+        data_full[g].update({'type': valid_item['type']})
     
 
+    for h in data:
+        if(len(h['heatmap']) == 0):
+            h.update({'heatmap': heat_list}) 
+
+    
+    return data_full
 
 
+pull = preprocess_data(pull_data())
 
 ##############################################################################
 # OPENING DATA BASE FILE
 
-conn = sqlite3.connect("os_reading_AUB_04.sqlite")
+conn = sqlite3.connect("os_reading_AUB_05.sqlite")
 c = conn.cursor()
 table_name = 'OS_READING_AUB'
 
 ##############################################################################
 # CREATING NEW DATABASE
-heatmap_values = [''] * (pull.heatmap_length - 2)
 
-for i in range(0, pull.heatmap_length - 2):
+heatmap_length = len(pull[0]['heatmap'])
+
+heatmap_values = [''] * (heatmap_length - 2)
+
+for i in range(0, heatmap_length - 2):
     heatmap_values[i] = '\'' + str(i) + '\'' + ' INTEGER'
 
 heatmap_values = str(heatmap_values)
@@ -120,14 +137,14 @@ c.execute(sql_create_table)
 ##############################################################################
 # INSERT DATA
 
-conn = sqlite3.connect("os_reading_AUB_04.sqlite")
+conn = sqlite3.connect("os_reading_AUB_05.sqlite")
 c = conn.cursor()
 
 heatmap_column_names = []
-for v in range(0, pull.heatmap_length - 2):
+for v in range(0, heatmap_length - 2):
     heatmap_column_names.append(str(v))
 
-for p in range(0, len(pull.data)):
+for p in range(0, len(pull)):
     sql_replace_or_insert = """INSERT OR IGNORE INTO """ + table_name + """ (
                                         date,
                                         human_time,
@@ -136,12 +153,12 @@ for p in range(0, len(pull.data)):
                                         y_res,
                                         """ + str(heatmap_column_names)[1:-1] + """)
                                         VALUES (
-                                        """ + str(pull.data[p]['date']) + """,
-                                        """ + '\'' + str(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(pull.data[p]['date']) / 1000))) + '\'' + """,
-                                        """ + '\'' + str(pull.data[p]['tags'][1]) + '\'' + """,
-                                        """ + str(pull.data[p]['heatmap'][0]) + """,
-                                        """ + str(pull.data[p]['heatmap'][1]) + """,
-                                        """ + str(pull.data[p]['heatmap'][2:])[1:-1] + """);"""
+                                        """ + str(pull[p]['date']) + """,
+                                        """ + '\'' + str(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(pull[p]['date']) / 1000))) + '\'' + """,
+                                        """ + '\'' + str(pull[p]['tags'][1]) + '\'' + """,
+                                        """ + str(pull[p]['heatmap'][0]) + """,
+                                        """ + str(pull[p]['heatmap'][1]) + """,
+                                        """ + str(pull[p]['heatmap'][2:])[1:-1] + """);"""
 
     c.execute(sql_replace_or_insert)
     conn.commit()
