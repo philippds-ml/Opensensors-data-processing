@@ -10,66 +10,88 @@ import pandas as pd
 ##############################################################################
 # OS PULL
 
-class os_data_pull():
+# pull JWT
+def pull_data():        
+    url_JWT = 'https://auth.opensensors.com/auth/login'
+    headers_JWT = { 'x-api-key': 'UoheJ3fp0w7CJisPi26NzNOw2rEPyMj67ovksMo1' }
+    API_access_token = requests.get(url_JWT, headers = headers_JWT, timeout = 1000).json()
+    # pulling data from opensensors api
+    url_GPM = 'https://api.opensensors.com/getProjectMessages';
+    headers_GPM = { 'Authorization': API_access_token.get('jwtToken') }
+    parameters = {'fromDate': '2018-02-27',
+                  'toDate': '2018-02-28',
+                  'projectUri': 'zaha-hadid',
+                  'deviceId': '5a5609dc1ac137000520d91f',
+                  'size': '500',
+                  'type': 'modcamHeatmap',
+                  'cursor': ''}
+    data = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()['items']
     
-    def __init__(self):
-        self.data = []
-        self.heatmap_length = 0
-        self.pull_data()
-        self.preprocess_data()
+    print("CHECKING DATA PULL --------")
+    for o in range(0, len(data)):
+        print(str(data[o]['date']) + "   " + str((data[o]['date'] // 1000) // 3600 % 24))
     
-    # pull JWT
-    def pull_data(self):
-        
-        url_JWT = 'https://auth.opensensors.com/auth/login'
-        headers_JWT = { 'x-api-key': 'UoheJ3fp0w7CJisPi26NzNOw2rEPyMj67ovksMo1' }
-        API_access_token = requests.get(url_JWT, headers = headers_JWT, timeout = 1000).json()
+    return data
 
-        # pulling data from opensensors api
-        url_GPM = 'https://api.opensensors.com/getProjectMessages';
-        headers_GPM = { 'Authorization': API_access_token.get('jwtToken') }
-        parameters = {'fromDate': '2018-05-01',
-                      'toDate': '2018-05-18',
-                      'projectUri': 'zaha-hadid',
-                      'deviceId': '5a5609dc1ac137000520d91f',
-                      'size': '500',
-                      'type': 'modcamHeatmap',
-                      'cursor': ''}
-
-        self.data = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()['items']
+# pre process data
+def preprocess_data(d):
     
-    # PREPROCESS DATA
-    def preprocess_data(self):        
+    # item['date'] // 1000) // 3600 % 24 != time_index
+    data = d
+    hour = 0
+    
+    for i in range(0, len(data)):
+        current_hour = (data[i]['date'] // 1000) // 3600 % 24
+        if(current_hour != hour):
+            data_temp = data[current_hour - hour]
+            data_date_temp = data[i]['date']
+            data_temp['date'] = data_date_temp - (current_hour - hour) * 3600000
+            data.insert(i, data_temp)
+            i -= 1
         
-        x_len = 0
-        y_len = 0
-        empty_data_replacement = []
+        if(hour < 23):
+            hour += 1
+        else:
+            hour = 0
+    
+    
+    print("CHECKING DATA PULL --------")
+    for o in range(0, len(data)):
+        print(str(data[o]['date']) + "   " + str((data[o]['date'] // 1000) // 3600 % 24))
+    
+    
+    return data
+
+data = pull_data()
+data = preprocess_data(data)
+
+
+
+test_list = list(range(0,24))
+del test_list[12]
+del test_list[12]
+del test_list[12]
+
+hour = 0
+for i in range(0, len(test_list)):
+        if(test_list[i] != hour):
+            test_list.insert(i, data_temp)
+            i -= 1
         
-        item_number = len(self.data)
-        
-        for j in range(0, item_number):
-            if not(len(self.data[j]['heatmap']) == 0):
-                print(len(self.data[j]['heatmap']))
-                x_len = self.data[j]['heatmap'][0]
-                y_len = self.data[j]['heatmap'][1]
-                empty_data_replacement.append(x_len)
-                empty_data_replacement.append(y_len)
-                empty_data_replacement += [0] * (len(self.data[j]['heatmap']) - 2)
-                break
-            
-        for k in range(0, item_number):
-            if (len(self.data[k]['heatmap']) == 0):
-                self.data[k]['heatmap'] = empty_data_replacement
-                    
-        self.heatmap_length = len(self.data[0]['heatmap'])
-        
-pull = os_data_pull()
+        if(hour < 23):
+            hour += 1
+        else:
+            hour = 0
+    
+    
+
+
 
 
 ##############################################################################
 # OPENING DATA BASE FILE
 
-conn = sqlite3.connect("os_reading_AUB_03.sqlite")
+conn = sqlite3.connect("os_reading_AUB_04.sqlite")
 c = conn.cursor()
 table_name = 'OS_READING_AUB'
 
@@ -91,14 +113,14 @@ sql_create_table = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
                                         tags TEXT,
                                         x_res INTEGER,
                                         y_res INTEGER,
-                                        """ + str(heatmap_values) + """); """
+                                        """ + str(heatmap_values) + """);"""
 
 c.execute(sql_create_table)
 
 ##############################################################################
 # INSERT DATA
 
-conn = sqlite3.connect("os_reading_AUB_03.sqlite")
+conn = sqlite3.connect("os_reading_AUB_04.sqlite")
 c = conn.cursor()
 
 heatmap_column_names = []
@@ -119,7 +141,7 @@ for p in range(0, len(pull.data)):
                                         """ + '\'' + str(pull.data[p]['tags'][1]) + '\'' + """,
                                         """ + str(pull.data[p]['heatmap'][0]) + """,
                                         """ + str(pull.data[p]['heatmap'][1]) + """,
-                                        """ + str(pull.data[p]['heatmap'][2:])[1:-1] + """); """
+                                        """ + str(pull.data[p]['heatmap'][2:])[1:-1] + """);"""
 
     c.execute(sql_replace_or_insert)
     conn.commit()
@@ -153,7 +175,7 @@ all_rows = c.fetchall()
 outlier_pixel_sum = []
 outlier_flag = [0] * row_count
 
-for r in range(5, pull.heatmap_length - 2 + 5):    
+for r in range(5, len(all_rows[0])):    
     # sort list
     sorted_list = []
     for g in range(0, row_count):
@@ -197,7 +219,7 @@ def plot_heatmaps(indexes, count, col):
     for g in range(0, count):
         
         index_x = 0
-        for m in range(5, pull.heatmap_length + 5 - 2):
+        for m in range(5, len(all_rows[0])):
             if index_x == 38:
                 temp_arr.append(all_rows[indexes[g]][m])
                 arrs.append(np.array(temp_arr))
@@ -218,11 +240,6 @@ def plot_heatmaps(indexes, count, col):
         plt.title(title, loc = 'left', fontsize = 7)
         arrs = []
         temp_arr = []
-        
-        
-        
-        
-        
         
         for i in range(0, 897):
             if(i < 8):
@@ -268,7 +285,7 @@ count_ai = 0
 count_code = 0
 count_vr = 0
 count_circulation = 0
-time_index = 0
+
 
 ai_time = [0] * 24
 code_time = [0] * 24
@@ -279,7 +296,15 @@ exhibition_time = [0] * 24
 
 X = [0] * 24
 
-for row in df.iterrows():    
+time_index = 0
+global_index = 0
+
+for row in df.iterrows():
+    
+    print(str(time_index) + " - " + str(all_rows[global_index][1]))
+    global_index += 1
+    
+    
     time_temp = 0
     exhibition_temp = 0
     
@@ -318,6 +343,9 @@ for row in df.iterrows():
         time_index += 1
     else:
         time_index = 0
+    
+    if(global_index == 960):    
+        break
 
 count_total = count_ai + count_code + count_vr + count_circulation
 
