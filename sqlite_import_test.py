@@ -4,12 +4,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import pandas as pd
-import Opensensors.py
+from opensensors import Opensensors
 
 # pulling data and creating database
 table_name = 'os_reading_AUB'
-osdp = Opensensors('2018-02-02', '2018-03-25', table_name)
-data = osdp.data
+osdp = Opensensors('2018-02-02', '2018-05-15', table_name)
+data = osdp.local_data
 
 row_count = len(data)
 heatmap_length = len(data[0]['heatmap'])
