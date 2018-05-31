@@ -1,105 +1,171 @@
-X = [0] * 24
+import matplotlib.pyplot as plt
+from dateutil.parser import parse
+import math
 
-count_ai = 0
-count_code = 0
-count_vr = 0
-count_circulation = 0
+########################## GENERAL ANALYTICS ###################################################
 
-
-ai_time = [0] * 24
-code_time = [0] * 24
-vr_time = [0] * 24
-
-circulation_time = [0] * 24
-exhibition_time = [0] * 24
-
-
-
-time_index = 0
-global_index = 0
-
-for row in heat.iterrows():
+class General(object):
     
-    #print(str(time_index) + " - " + str(data[global_index][1]))
-    global_index += 1
-    
-    
-    time_temp = 0
-    exhibition_temp = 0
-    
-    ai_temp = 0
-    code_temp = 0
-    vr_temp = 0
-    
-    for i in range(0, 897):
-        if(i < 8):
-            count_ai += row[1][i]
-            exhibition_temp += row[1][i]
-            ai_temp += row[1][i]
-        elif((i >= 39 and i % 39 < 8) and (int(i / 39) < 12)):
-            count_ai += row[1][i]
-            exhibition_temp += row[1][i] 
-            ai_temp += row[1][i]  
-        elif(int(i / 39) >= 18 and i % 39 > 10 and i % 39 <= 25 and (int(i / 39) < 21 or i % 39 > 14 or i % 39 < 12)):
-            count_code += row[1][i]
-            exhibition_temp += row[1][i]
-            code_temp += row[1][i]  
-        elif(int(i / 39) >= 10 and i % 39 > 25):
-            count_vr += row[1][i]
-            exhibition_temp += row[1][i]
-            vr_temp += row[1][i]  
-        else:
-            count_circulation += row[1][i]
-            time_temp += row[1][i]
-    
-    circulation_time[time_index] += time_temp
-    exhibition_time[time_index] += exhibition_temp
-    ai_time[time_index] += ai_temp
-    code_time[time_index] += code_temp
-    vr_time[time_index] += vr_temp    
-    
-    if(time_index < 23):
-        time_index += 1
-    else:
-        time_index = 0
-    
-    if(global_index == 960):    
-        break
+    def __init__(self, data):
+        self.data = data        
+        self.row_count = data['0'].count()
+        self.column_count = len(data.columns)
+        
+        self.day_count = 0
+        self.week_count = 0
+        self.month_count = 0
+        
+        self.count_ai = 0
+        self.count_code = 0
+        self.count_vr = 0
+        self.count_circulation = 0
+        self.count_exhibition = 0
+        
+        self.ai_day = [0] * 24
+        self.code_day = [0] * 24
+        self.vr_day = [0] * 24        
+        self.circulation_day = [0] * 24
+        self.exhibition_day = [0] * 24
+        
+        self.ai_week = [0] * 7
+        self.code_week = [0] * 7
+        self.vr_week = [0] * 7
+        self.circulation_week = [0] * 7
+        self.exhibition_week = [0] * 7
+        
+        self.ai_month = [0] * 31
+        self.code_month = [0] * 31
+        self.vr_month = [0] * 31     
+        self.circulation_month = [0] * 31
+        self.exhibition_month = [0] * 31
+        
+        self.count_all_movement()
+        print("ai", self.count_ai, "code", self.count_code, "vr", self.count_vr)
+        self.calculate_movement_over_time()
 
-count_total = count_ai + count_code + count_vr + count_circulation
+    def count_all_movement(self):
+        for r in range(0, self.row_count):
+            for c in range(0, self.column_count - 5):
+                value = self.data.iat[r, c + 5]
+                if((c < 8) or (c >= 39 and c % 39 < 8) and (int(c / 39) < 12)):
+                    self.count_ai += value
+                    self.count_exhibition += value
+                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25 and (int(c / 39) < 21 or c % 39 > 14 or c % 39 < 12)):
+                    self.count_code += value
+                    self.count_exhibition += value
+                elif(int(c / 39) >= 10 and c % 39 > 25):
+                    self.count_vr += value
+                    self.count_exhibition += value
+                else:
+                    self.count_circulation += value
 
-for t in range(0, len(circulation_time)):
-    X[t] = t
-    circulation_time[t] /= (count_total / 100)
-for t in range(0, len(circulation_time)):
-    exhibition_time[t] /= (count_total / 100)
-    ai_time[t] /= (count_total / 100)
-    code_time[t] /= (count_total / 100)
-    vr_time[t] /= (count_total / 100)
-
-count_total /= 100
-count_ai /= count_total
-count_code /= count_total
-count_vr /= count_total
-count_circulation /= count_total
-
-plt.xlabel('Hour', fontsize = 14)
-plt.ylabel('Movement (%)', fontsize = 14)
-plt.plot(X, circulation_time, color = 'red', lw = 4, label = 'circulation usage')
-plt.plot(X, exhibition_time, color = 'blue', lw = 4, label = 'exhibition visit')
-plt.legend()
-plt.show()
-
-plt.xlabel('Hour', fontsize = 14)
-plt.ylabel('Movement (%)', fontsize = 14)
-plt.plot(X, ai_time, color = 'red', lw = 2, label = 'ai exhibition visit')
-plt.plot(X, code_time, color = 'blue', lw = 2, label = 'code exhibition visit')
-plt.plot(X, vr_time, color = 'green', lw = 2, label = 'vr exhibition visit')
-plt.legend()
-plt.show()
-
-plt.ylabel('Percentage (%)')
-plt.bar([0, 1, 2], [(count_ai / (count_ai + count_code + count_vr)) * 100, (count_code / (count_ai + count_code + count_vr)) * 100, (count_vr / (count_ai + count_code + count_vr)) * 100], color = ['red', 'blue', 'green'])
-plt.xticks([0, 1, 2], ("AI visits", "Code visits", "VR visits"))
-plt.legen()
-plt.show()
+    def calculate_movement_over_time(self):
+        day_index = 0
+        week_index = 0
+        month_index = 0
+        for r in range(0, self.row_count):
+            
+            circulation_temp = 0            
+            exhibition_temp = 0       
+            ai_temp = 0
+            code_temp = 0
+            vr_temp = 0
+            
+            for c in range(0, self.column_count - 5):
+                value = self.data.iat[r, c + 5]                
+                if((c < 8) or ((c >= 39 and c % 39 < 8) and (int(c / 39) < 12))):
+                    exhibition_temp += value
+                    ai_temp += value
+                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25 and (int(c / 39) < 21 or c % 39 > 14 or c % 39 < 12)):
+                    exhibition_temp += value
+                    code_temp += value
+                elif(int(c / 39) >= 10 and c % 39 > 25):
+                    exhibition_temp += value
+                    vr_temp += value
+                else:
+                    circulation_temp += value
+            
+            self.circulation_day[day_index] += circulation_temp
+            self.exhibition_day[day_index] += exhibition_temp
+            self.ai_day[day_index] += ai_temp
+            self.code_day[day_index] += code_temp
+            self.vr_day[day_index] += vr_temp
+            
+            week_index = self.data.iat[r, 2]             
+            self.circulation_week[week_index] += circulation_temp
+            self.exhibition_week[week_index] += exhibition_temp
+            self.ai_week[week_index] += ai_temp
+            self.code_week[week_index] += code_temp
+            self.vr_week[week_index] += vr_temp
+            
+            month_index = parse(self.data.iat[r, 1]).date().day - 1
+            self.circulation_month[month_index] += circulation_temp
+            self.exhibition_month[month_index] += exhibition_temp
+            self.ai_month[month_index] += ai_temp
+            self.code_month[month_index] += code_temp
+            self.vr_month[month_index] += vr_temp
+            
+            if(day_index < 23):
+                day_index += 1
+            else:
+                day_index = 0
+                self.day_count += 1                
+        
+        for i in range(0, len(self.ai_day)):
+            self.ai_day[i] /= self.day_count
+            self.code_day[i] /= self.day_count
+            self.vr_day[i] /= self.day_count     
+            self.circulation_day[i] /= self.day_count
+            self.exhibition_day[i] /= self.day_count
+        
+        for i in range(0, len(self.ai_week)):
+            week_count = math.ceil(self.day_count / 7)
+            self.ai_week[i] /= week_count
+            self.code_week[i] /= week_count
+            self.vr_week[i] /= week_count
+            self.circulation_week[i] /= week_count
+            self.exhibition_week[i] /= week_count
+            
+        for i in range(0, len(self.ai_month)):
+            month_count = math.ceil(self.day_count / 31)
+            self.ai_month[i] /= month_count
+            self.code_month[i] /= month_count
+            self.vr_month[i] /= month_count    
+            self.circulation_month[i] /= month_count
+            self.exhibition_month[i] /= month_count
+   
+    def period_plot(self, period, kind):
+        title = ""
+        
+        if(period == 'day'):
+            title = "AUB Movement Data | Average Day"
+            plt.xlabel('Hours', fontsize = 14)
+            X = [i for i in range(24)]
+            if(kind == 'circulation'):  plt.plot(X, self.circulation_day, color = 'coral', lw = 4, label = 'circulation usage')
+            if(kind == 'exhibition'):  plt.plot(X, self.exhibition_day, color = 'blue', lw = 4, label = 'exhibition visits')
+            if(kind == 'ai'):  plt.plot(X, self.ai_day, color = 'lightblue', lw = 4, label = 'ai visits')
+            if(kind == 'code'):  plt.plot(X, self.code_day, color = 'teal', lw = 4, label = 'code visits')
+            if(kind == 'vr'):  plt.plot(X, self.vr_day, color = 'turquoise', lw = 4, label = 'vr visits')
+        if(period == 'week'):
+            title = "AUB Movement Data | Average Week"
+            plt.xlabel('Days', fontsize = 14)
+            X = [i for i in range(1, 8)]
+            if(kind == 'circulation'):  plt.plot(X, self.circulation_week, color = 'coral', lw = 4, label = 'circulation usage')
+            if(kind == 'exhibition'):  plt.plot(X, self.exhibition_week, color = 'blue', lw = 4, label = 'exhibition visits')
+            if(kind == 'ai'):  plt.plot(X, self.ai_week, color = 'lightblue', lw = 4, label = 'ai visits')
+            if(kind == 'code'):  plt.plot(X, self.code_week, color = 'teal', lw = 4, label = 'code visits')
+            if(kind == 'vr'):  plt.plot(X, self.vr_week, color = 'turquoise', lw = 4, label = 'vr visits')
+        if(period == 'month'):
+            title = "AUB Movement Data | Average Month"
+            plt.xlabel('Days', fontsize = 14)
+            X = [i for i in range(1, 32)]
+            if(kind == 'circulation'):  plt.plot(X, self.circulation_month, color = 'coral', lw = 4, label = 'circulation usage')
+            if(kind == 'exhibition'):  plt.plot(X, self.exhibition_month, color = 'blue', lw = 4, label = 'exhibition visits')
+            if(kind == 'ai'):  plt.plot(X, self.ai_month, color = 'lightblue', lw = 4, label = 'ai visits')
+            if(kind == 'code'):  plt.plot(X, self.code_month, color = 'teal', lw = 4, label = 'code visits')
+            if(kind == 'vr'):  plt.plot(X, self.vr_month, color = 'turquoise', lw = 4, label = 'vr visits')
+        
+        plt.title(title, loc = 'left', fontsize = 20)
+        plt.ylabel('Movement in Seconds', fontsize = 14)
+        plt.legend()
+        plt.show()

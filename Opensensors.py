@@ -15,7 +15,7 @@ class Opensensors(object):
         self.compute()
     
     def compute(self):
-        
+        print("pulling data from Opensesnors...")
         total_day_number = self.to_date - self.from_date
         start_date = self.from_date
         end_date = self.to_date
@@ -43,7 +43,6 @@ class Opensensors(object):
                             
                             print("x resolution", x_res)
                             print("y resolution", y_res)
-                            print("heatmap size", heatmap_length)
                             
                             check = True
                             break
@@ -52,10 +51,10 @@ class Opensensors(object):
             
             if(check):
                 break
-        
+        print("creating SQLite database...")
         # creating database
         self.creating_db(valid_data_item)
-        
+        print("filling database with Sensor Readings...")
         # fill DB with Sensor Readings
         concatinated_data = []
         for j in range(0, total_day_number.days):
@@ -84,15 +83,14 @@ class Opensensors(object):
             concatinated_data += temp_data
         
         
-        
+        print("filling database gaps with dummy values...")
         # fill DB with dummy values
         heat_list = []
         heat_list.append(x_res)
         heat_list.append(y_res)
         heat_list += [0] * (heatmap_length - 2)
         
-        dummy_values = [{}] *  total_day_number.days * 24        
-        print(total_day_number.days * 24)
+        dummy_values = [{}] *  total_day_number.days * 24
         
         for i in range(0, total_day_number.days * 24):  
             human_time = self.from_date + timedelta(hours = 1 * i)
@@ -103,7 +101,10 @@ class Opensensors(object):
             dummy_values[i].update({'human_time': str(human_time)})
             
             dummy_values[i].update({'heatmap': heat_list})
-            dummy_values[i].update({'dayOfTheWeek': human_time.today().weekday()})
+            dayOfTheWeek = human_time.isoweekday()
+            if(dayOfTheWeek == 7):
+                dayOfTheWeek = 0
+            dummy_values[i].update({'dayOfTheWeek': dayOfTheWeek})
             dummy_values[i].update({'deviceId': valid_data_item['deviceId']})
             dummy_values[i].update({'type': valid_data_item['type']})
             dummy_values[i].update({'tags': valid_data_item['tags']})
@@ -123,6 +124,7 @@ class Opensensors(object):
         
         self.insert_data_into_db(output_data)
         self.data = output_data
+        print("... Done!")
         
     
     ##############################################################################
@@ -165,6 +167,7 @@ class Opensensors(object):
         sql_create_table = """ CREATE TABLE IF NOT EXISTS """ + table_name + """ (
                                                 date INTEGER PRIMARY KEY,
                                                 human_time TEXT,
+                                                day_of_week INTEGER,
                                                 tags TEXT,
                                                 x_res INTEGER,
                                                 y_res INTEGER,
@@ -187,6 +190,7 @@ class Opensensors(object):
             sql_insert = """INSERT OR REPLACE INTO """ + table_name + """ (
                                                 date,
                                                 human_time,
+                                                day_of_week,
                                                 tags,
                                                 x_res,
                                                 y_res,
@@ -194,6 +198,7 @@ class Opensensors(object):
                                                 VALUES (
                                                 """ + str(d[p]['date']) + """,
                                                 """ + '\'' + str(d[p]['human_time']) + '\'' + """,
+                                                """ + str(d[p]['dayOfTheWeek']) + """,
                                                 """ + '\'' + str(d[p]['tags'][1]) + '\'' + """,
                                                 """ + str(d[p]['heatmap'][0]) + """,
                                                 """ + str(d[p]['heatmap'][1]) + """,
@@ -209,7 +214,7 @@ class Opensensors(object):
         c = conn.cursor()
         table_name = 'OS_READING_AUB'
         
-        heatmap_column_names = []        
+        heatmap_column_names = []
         for v in range(0, len(d[0]['heatmap']) - 2):
             heatmap_column_names.append(str(v))
         
@@ -224,6 +229,7 @@ class Opensensors(object):
                                                 VALUES (
                                                 """ + str(d[p]['date']) + """,
                                                 """ + '\'' + str(d[p]['human_time']) + '\'' + """,
+                                                """ + str(d[p]['dayOfTheWeek']) + """,
                                                 """ + '\'' + str(d[p]['tags'][1]) + '\'' + """,
                                                 """ + str(d[p]['heatmap'][0]) + """,
                                                 """ + str(d[p]['heatmap'][1]) + """,
