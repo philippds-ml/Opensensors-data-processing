@@ -17,10 +17,22 @@ class Outliers(object):
         
         self.comptute()
 
+
+        """
+        for b in range(0, row_count):    
+            temp_outlier_sum = 0
+            for m in range(5, heatmap_length - 2 + 5):
+                if (math.sqrt(math.pow(ave[m - 5] - data[b][m], 2)) > (ave[m - 5] * 1.5)):
+                    temp_outlier_sum += 1
+            outlier_sum.append(temp_outlier_sum)
+        """
+            
+            
+            
     # CALCULATE OUTLIERS
     def calc_outliers(self):
-        outlier_pixel_sum = [0] * (self.column_count - 5)
-        for r in range(5, self.column_count):
+        outlier_pixel_sum = [0] * (self.column_count - 6)
+        for r in range(6, self.column_count):
             # sort list
             sorted_list = []            
             for g in range(0, self.row_count):
@@ -39,7 +51,7 @@ class Outliers(object):
                     temp_outlier_sum += 1
                     self.outlier_flag[m] += 1
                     
-            outlier_pixel_sum[r - 5] = temp_outlier_sum
+            outlier_pixel_sum[r - 6] = temp_outlier_sum
             
         
         
@@ -63,7 +75,7 @@ class Outliers(object):
         for g in range(0, count):
             
             index_x = 0
-            for m in range(5, self.column_count):
+            for m in range(6, self.column_count):
                 if index_x == 38:
                     temp_arr.append(self.data.iat[index[g], m])
                     arrs.append(np.array(temp_arr))
@@ -86,18 +98,17 @@ class Outliers(object):
             plt.subplot(row, col, g + 1)
             plt.imshow(heatmap_0, cmap='hot', interpolation='gaussian')
      
-            title = self.data.iat[index[g], 1] + " | " + str(self.outlier_flag[index[g]])
-        
+            title = self.data.iat[index[g], 1] + " | " + str(self.outlier_flag[index[g]])        
             plt.title(title, loc = 'left', fontsize = 7)
             arrs = []
             temp_arr = []
             
-            
-            for i in range(0, self.column_count - 5):
+            """
+            for i in range(0, self.column_count - 6):
                 if((i < 8) or ((i >= 39 and i % 39 < 8) and (int(i / 39) < 12))):
                     plt.scatter(i % 39, int(i / 39), color = 'blue', s = 10)
                 
-                if(int(i / 39) >= 18 and i % 39 > 10 and i % 39 <= 25 and (int(i / 39) < 21 or i % 39 > 14 or i % 39 < 12)):
+                if(int(i / 39) >= 18 and i % 39 > 10 and i % 39 <= 25 and (int(i / 39) < 21 or i % 39 > 15 or i % 39 < 12)):
                     plt.scatter(i % 39, int(i / 39), color = 'red', s = 10)
                 
                 if(int(i / 39) >= 10 and i % 39 > 25):
@@ -106,6 +117,7 @@ class Outliers(object):
             plt.scatter(7, 4, color = 'cyan', s = 30)
             plt.scatter(7, 14, color = 'cyan', s = 30)
             plt.scatter(18, 11, color = 'cyan', s = 30)
+            """
             
             
     

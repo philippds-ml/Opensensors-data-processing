@@ -7,9 +7,16 @@ import math
 class General(object):
     
     def __init__(self, data):
-        self.data = data        
-        self.row_count = data['0'].count()
-        self.column_count = len(data.columns)
+        self.data = data
+        self.data = self.data.iloc[:,-1]
+        
+        for index,row in data.iterrows():
+            heatmap_list = list(map(int, data.iat[index, 6].split(',')))
+            for i in range(0, len(heatmap_list)):
+                self.data.loc[index, str(i)] = int(heatmap_list[i])      
+        
+        self.row_count = self.data['0'].count()
+        self.column_count = len(self.data.columns)
         
         self.day_count = 0
         self.week_count = 0
@@ -45,12 +52,12 @@ class General(object):
 
     def count_all_movement(self):
         for r in range(0, self.row_count):
-            for c in range(0, self.column_count - 5):
-                value = self.data.iat[r, c + 5]
+            for c in range(0, self.column_count - 6):
+                value = self.data.iat[r, c + 6]
                 if((c < 8) or (c >= 39 and c % 39 < 8) and (int(c / 39) < 12)):
                     self.count_ai += value
                     self.count_exhibition += value
-                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25 and (int(c / 39) < 21 or c % 39 > 14 or c % 39 < 12)):
+                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25):
                     self.count_code += value
                     self.count_exhibition += value
                 elif(int(c / 39) >= 10 and c % 39 > 25):
@@ -71,12 +78,12 @@ class General(object):
             code_temp = 0
             vr_temp = 0
             
-            for c in range(0, self.column_count - 5):
-                value = self.data.iat[r, c + 5]                
+            for c in range(0, self.column_count - 6):
+                value = self.data.iat[r, c + 6]                
                 if((c < 8) or ((c >= 39 and c % 39 < 8) and (int(c / 39) < 12))):
                     exhibition_temp += value
                     ai_temp += value
-                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25 and (int(c / 39) < 21 or c % 39 > 14 or c % 39 < 12)):
+                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25):
                     exhibition_temp += value
                     code_temp += value
                 elif(int(c / 39) >= 10 and c % 39 > 25):
@@ -169,3 +176,14 @@ class General(object):
         plt.ylabel('Movement in Seconds', fontsize = 14)
         plt.legend()
         plt.show()
+    
+    def plot_comparison_bars(self):
+        title = "AUB Movement Data | Total Movement Count"
+        plt.title(title, loc = 'left', fontsize = 20)
+        X = [i for i in range(5)]
+        colors = ['coral', 'blue', 'lightblue', 'teal', 'turquoise']
+        plt.ylabel('Movement in Seconds (k)', fontsize = 14)
+        plt.bar(X, [self.count_circulation / 1000, self.count_exhibition / 1000, self.count_ai / 1000, self.count_code / 1000, self.count_vr / 1000], color = colors)
+        plt.xticks(X, ('Circulation', 'Exhibition','AI', 'CODE', 'VR'))
+        plt.show()
+        
