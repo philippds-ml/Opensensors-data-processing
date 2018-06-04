@@ -5,6 +5,7 @@ from opensensors import Opensensors
 from outlier_analytics import Outliers
 from general_analytics import General
 from heatmap_analytics import Heatmap
+from data_preprocessing import preprocess
 
 # pulling data and creating database
 table_name = 'os_reading_'
@@ -17,35 +18,12 @@ project = 'Reception'
 osdp = Opensensors('2018-03-02', '2018-04-03', table_name + project, project)
 data = osdp.data
 
-def preprocess(data):
-    data_dictionary = {}
-    data2 = []
-    heatmap_series = data.iloc[:,6:7]
-    row_count = data.shape[0]
-    for i in range(0, row_count):            
-        temp = heatmap_series.iat[i, 0].split(',')
-        heatmap_list = []
-        for j in range(0, len(temp)):
-            heatmap_list.append(int(temp[j]))                    
-        data2.append(heatmap_list)
-
-    for i in range(0, len(data2)):
-        data_dictionary[i] =  data2[i]
-    
-    data2 = pd.DataFrame(data = data_dictionary).T
-
-    
-    data = pd.concat([data, data2], axis = 1)
-    data = data.drop(columns='heatmap')
-    return data
-
 # SQLite database to pandas dataframe
 conn = sqlite3.connect(table_name + project + ".sqlite")
 data = preprocess(pd.read_sql_query("SELECT * FROM " + project, conn))
 conn.close()
 
 #heat = data.iloc[:, 5:]
-
 out = Outliers(data)
 out.plot(50)
 

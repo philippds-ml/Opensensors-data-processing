@@ -27,8 +27,8 @@ class Opensensors(object):
         total_day_number = self.to_date - self.from_date
         start_date = self.from_date
         end_date = self.to_date
-                
-        # FIND VALID ITEM
+        
+        # FIND VALID ITEM -----------------------------------------------------
         for k in range(0, total_day_number.days):
             check = False            
             sd = start_date
@@ -49,9 +49,9 @@ class Opensensors(object):
                 check = False            
             if(check):
                 break
-        ###################
+        #----------------------------------------------------------------------
 
-        # CREATING DATABASE
+        # CREATING DATABASE ---------------------------------------------------
         self.creating_db()
         concatinated_data = []
         for j in range(0, total_day_number.days):
@@ -88,11 +88,11 @@ class Opensensors(object):
                             heat_item += ","
                     
                     d[m].update({'heatmap': heat_item})            
-                    concatinated_data.append(d[m])
+                    concatinated_data.append(d[m])        
+        #----------------------------------------------------------------------
         
-        ###################
         
-        # fill DB with dummy values        
+        # fill DB with dummy values -------------------------------------------
         dummy_heatmap_string = ""
         for i in range(0, self.heatmap_length):
             dummy_heatmap_string += str(0)
@@ -125,20 +125,16 @@ class Opensensors(object):
                     output_data[c].update({'human_time': dummy_values[c]['human_time']})
                     break
         
-        
         for i in range(0, len(output_data)):
             print(output_data[i]['tags'])
         
         self.insert_data_into_db(output_data)
-        self.data = output_data
-        #self.data = output_data[0]['heatmap']
-        
+        self.data = output_data     
         print("... Done!")
-        
+        #----------------------------------------------------------------------
     
-    ##############################################################################
-    # OS METHODS
     
+    # PULL OPENSENSOR DATA ----------------------------------------------------    
     def pull_data(self, from_d, to_d):        
         url_JWT = 'https://auth.opensensors.com/auth/login'
         headers_JWT = { 'x-api-key': 'UoheJ3fp0w7CJisPi26NzNOw2rEPyMj67ovksMo1' }
@@ -162,12 +158,14 @@ class Opensensors(object):
                       'cursor': ''}
         data = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()['items']        
         return data
-
+    #--------------------------------------------------------------------------
+    
+    
+    # CREATING DATABASE -------------------------------------------------------
     def creating_db(self):
-        # OPENING DATA BASE FILE
-        conn = sqlite3.connect(self.data_base_name)        
-        c = conn.cursor()
         
+        conn = sqlite3.connect(self.data_base_name)
+        c = conn.cursor()        
         sql_create_table = 'CREATE TABLE IF NOT EXISTS ' + self.project + """ (date INTEGER PRIMARY KEY,
                                                                                     human_time TEXT,
                                                                                     day_of_week INTEGER,
@@ -175,12 +173,13 @@ class Opensensors(object):
                                                                                     x_res INTEGER,
                                                                                     y_res INTEGER,
                                                                                     heatmap TEXT);"""
-        
         c.execute(sql_create_table)
         conn.close()
-        
+    #--------------------------------------------------------------------------
+    
+    
+    # INSERT DATA INTO DATABASE------------------------------------------------
     def insert_data_into_db(self, d):
-        # INSERT DATA
         conn = sqlite3.connect(self.data_base_name)
         c = conn.cursor()        
         sql_insert = 'INSERT OR REPLACE INTO ' + self.project + ' (date, human_time, day_of_week, tags, x_res, y_res, heatmap) VALUES (?,?,?,?,?,?,?)'        
@@ -188,15 +187,16 @@ class Opensensors(object):
             c.execute(sql_insert, (d[p]['date'], d[p]['human_time'], d[p]['dayOfTheWeek'], d[p]['tags'], d[p]['x_res'], d[p]['y_res'], d[p]['heatmap']))
         conn.commit()        
         conn.close()
-                
-    def get_all_data(self):
-        # GET ALL DATA FROM DATABASE        
+    #--------------------------------------------------------------------------
+    
+    
+    # GET ALL DATA FROM DATABASE-----------------------------------------------     
+    def get_all_data(self):               
         conn = sqlite3.connect(self.data_base_name)
         c = conn.cursor()
         table_name = c.execute("SELECT name FROM sqlite_master WHERE type='table';")
         for name in table_name:
             table_name = name[0]
-        
         
         dataCopy = c.execute("select count(*) from """ + table_name)
         row_count = dataCopy.fetchone()
@@ -205,3 +205,4 @@ class Opensensors(object):
         c.execute('SELECT * FROM {tn}'.\
                       format(tn = table_name))
         return c.fetchall()
+    #--------------------------------------------------------------------------

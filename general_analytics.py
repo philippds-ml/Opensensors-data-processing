@@ -18,6 +18,47 @@ class General(object):
         self.week_count = 0
         self.month_count = 0
         
+                    # AI
+                    # CODE
+                    # VR
+                    # CIRCULATION
+                    # EXHIBITION
+        
+        self.AUB_dictionary = {'ai': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                               'code': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                               'vr': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                               'circulation': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                               'exhibition': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31}}
+
+                    # CIRCULATION
+                    # MEETING TABLE
+                    # SITTING TABLES
+                    # STANDING TABLES
+                    # CAFE BAR
+                    # RECEPTION
+                    # CIRCULATION
+                    
+        self.Reception_dictionary = {'meeting': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                     'sitting': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                     'standing': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                     'cafe': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                     'reception': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                     'circulation': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31}}
+        
+                    # MEETING CHAIRS FRONT Quarter
+                    # MEETING CHAIRS FRONT HALF
+                    # MEETING CHAIRS FRONT Three Quater
+                    # MEETING CHAIRS FRONT TOTAL
+                    # CIRCULATION
+                    # MEETING
+                    
+        self.Meeting_dictionary = {'quarter': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                   'half': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                   'three': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                   'total': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                   'circulation': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31},
+                                   'meeting': {'count': 0, 'day': [0] * 24, 'week': [0] * 7, 'month': [0] * 31}}
+
         self.count_ai = 0
         self.count_code = 0
         self.count_vr = 0
@@ -65,24 +106,32 @@ class General(object):
                     else:
                         self.count_circulation += value
                 
-                #TO DO:
-                #if Reception, if Meeting Room
-
-
+                if(self.data.iat[r, 3] == 'Reception'):
+                    # CIRCULATION
+                    # MEETING TABLE
+                    # SITTING TABLES
+                    # STANDING TABLES
+                    # CAFE BAR
+                    # RECEPTION
+                    
+                if(self.data.iat[r, 3] == 'Meeting'):
+                    # MEETING CHAIRS
+                    # CIRCULATION
+                    # MEETING
 
     # TO DO:
     def calculate_movement_over_time(self, data):
         day_index = 0
         week_index = 0
         month_index = 0
+        
         for r in range(0, self.row_count):
-            
             circulation_temp = 0            
             exhibition_temp = 0       
             ai_temp = 0
             code_temp = 0
             vr_temp = 0
-            
+
             for c in range(0, self.column_count - 6):
                 value = data.iat[r, c + 6]
                 if((c < 8) or ((c >= 39 and c % 39 < 8) and (int(c / 39) < 12))):
