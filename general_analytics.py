@@ -6,34 +6,13 @@ import math
 ########################## GENERAL ANALYTICS ###################################################
 
 class General(object):
-    
-    data = pd.DataFrame()
-    
+        
     def __init__(self, data = pd.DataFrame()):
-        heatmap_series = data.iloc[:,6:7]
+        self.data = data
+        self.heatmap_series = data.iloc[:,6:7]
+        
         self.row_count = data.shape[0]
-        self.column_count = data.shape[1]
-        
-        data_dictionary = {}
-        data2 = [[]]
-        
-        for i in range(0, self.row_count):            
-            temp = heatmap_series[i].split(',')
-            heatmap_list = []
-            for j in range(0, len(temp)):
-                if temp[j] != '':
-                    heatmap_list.append(int(temp[j]))
-            
-            data2.append(heatmap_list)
-        
-        for i in range(0, len(data2[0])):
-            for j in range(0, len(data2)):
-                data_dictionary.update({str(i): data2[j][i]})
-        
-        data2 = pd.DataFrame(data = data_dictionary)        
-        data = pd.concat([data, data2], axis = 1)        
-        data = data.drop(columns='heatmap')
-        
+        self.column_count = self.data.shape[1]
         
         self.day_count = 0
         self.week_count = 0
@@ -63,28 +42,35 @@ class General(object):
         self.circulation_month = [0] * 31
         self.exhibition_month = [0] * 31
         
-        self.count_all_movement(data)
+        self.count_all_movement()
         print("ai", self.count_ai, "code", self.count_code, "vr", self.count_vr)
-        self.calculate_movement_over_time(data)
-        
+        #self.calculate_movement_over_time(data)
         
 
-    def count_all_movement(self, data):
+    def count_all_movement(self):
         for r in range(0, self.row_count):
             for c in range(0, self.column_count - 6):
-                value = data.iat[r, c + 6]
-                if((c < 8) or (c >= 39 and c % 39 < 8) and (int(c / 39) < 12)):
-                    self.count_ai += value
-                    self.count_exhibition += value
-                elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25):
-                    self.count_code += value
-                    self.count_exhibition += value
-                elif(int(c / 39) >= 10 and c % 39 > 25):
-                    self.count_vr += value
-                    self.count_exhibition += value
-                else:
-                    self.count_circulation += value
+                value = self.data.iat[r, c + 6]
+                
+                if(self.data.iat[r, 3] == 'AUB'):
+                    if((c < 8) or (c >= 39 and c % 39 < 8) and (int(c / 39) < 12)):
+                        self.count_ai += value
+                        self.count_exhibition += value
+                    elif(int(c / 39) >= 18 and c % 39 > 10 and c % 39 <= 25):
+                        self.count_code += value
+                        self.count_exhibition += value
+                    elif(int(c / 39) >= 10 and c % 39 > 25):
+                        self.count_vr += value
+                        self.count_exhibition += value
+                    else:
+                        self.count_circulation += value
+                
+                #TO DO:
+                #if Reception, if Meeting Room
 
+
+
+    # TO DO:
     def calculate_movement_over_time(self, data):
         day_index = 0
         week_index = 0
@@ -98,7 +84,7 @@ class General(object):
             vr_temp = 0
             
             for c in range(0, self.column_count - 6):
-                value = data.iat[r, c + 6]                
+                value = data.iat[r, c + 6]
                 if((c < 8) or ((c >= 39 and c % 39 < 8) and (int(c / 39) < 12))):
                     exhibition_temp += value
                     ai_temp += value
@@ -202,7 +188,7 @@ class General(object):
         X = [i for i in range(5)]
         colors = ['coral', 'blue', 'lightblue', 'teal', 'turquoise']
         plt.ylabel('Movement in Seconds (k)', fontsize = 14)
-        plt.bar(X, [self.count_circulation / 1000, self.count_exhibition / 1000, self.count_ai / 1000, self.count_code / 1000, self.count_vr / 1000], color = colors)
+        plt.bar(X, [self.count_circulation, self.count_exhibition, self.count_ai, self.count_code, self.count_vr], color = colors)
         plt.xticks(X, ('Circulation', 'Exhibition','AI', 'CODE', 'VR'))
         plt.show()
         

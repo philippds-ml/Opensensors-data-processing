@@ -11,10 +11,12 @@ class Outliers(object):
         self.data = data
         self.outlier_index = []
         
-        self.row_count = data['0'].count()
-        self.outlier_flag = [0] * self.row_count
-        self.column_count = len(data.columns)
+        self.x_res = data.iat[0, 4]
         
+        self.row_count = data.shape[0]
+        self.column_count = self.data.shape[1]
+        
+        self.outlier_flag = [0] * self.row_count        
         self.comptute()
 
 
@@ -26,9 +28,7 @@ class Outliers(object):
                     temp_outlier_sum += 1
             outlier_sum.append(temp_outlier_sum)
         """
-            
-            
-            
+    
     # CALCULATE OUTLIERS
     def calc_outliers(self):
         outlier_pixel_sum = [0] * (self.column_count - 6)
@@ -76,7 +76,7 @@ class Outliers(object):
             
             index_x = 0
             for m in range(6, self.column_count):
-                if index_x == 38:
+                if index_x == self.x_res - 1:
                     temp_arr.append(self.data.iat[index[g], m])
                     arrs.append(np.array(temp_arr))
                     temp_arr = []

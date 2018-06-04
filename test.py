@@ -83,6 +83,12 @@ print(test_string[3])
 
 list1 = [0,0,0]
 list2 = [1,2,3]
+print(list2)
+
+test_string = "test"
+
+print(len(test_string))
+print(test_string)
 
 aaa = np.array(list1)
 
@@ -91,3 +97,7 @@ aaa += np.array(list2)
 aaa = data.iloc[0,1:2]
 
 
+
+list1 = [[7,6,5],[3,2,1]]
+
+print(list1[0][1])
