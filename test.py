@@ -3,6 +3,7 @@ import time
 import operator
 from dateutil.parser import parse
 import numpy as np
+import pandas as pd
 
 from_date = datetime.strptime('2018-02-02', "%Y-%m-%d")
 to_date = datetime.strptime('2018-03-14', "%Y-%m-%d")
@@ -64,10 +65,16 @@ dictionary = dict({'heat': 'heatmap'})
 
 print(dictionary['heat'][1])
 
-test_string = "0,1,54,7,3,5"
+test_string = "0,1,54,7,3,5,4"
 test_list = list(map(int, test_string.split(',')))
 
 dictionary.update({'heat': list(map(int, test_string.split(',')))})
+
+df = pd.DataFrame(data = dictionary)
+e = df.shape[0]
+
+print(df.iat[2, 0])
+
 
 
 test_rand = np.random.randint(0, 10)

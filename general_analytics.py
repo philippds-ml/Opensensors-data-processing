@@ -1,22 +1,39 @@
 import matplotlib.pyplot as plt
 from dateutil.parser import parse
+import pandas as pd
 import math
 
 ########################## GENERAL ANALYTICS ###################################################
 
 class General(object):
     
-    def __init__(self, data):
-        self.data = data
-        self.data = self.data.iloc[:,-1]
+    data = pd.DataFrame()
+    
+    def __init__(self, data = pd.DataFrame()):
+        heatmap_series = data.iloc[:,6:7]
+        self.row_count = data.shape[0]
+        self.column_count = data.shape[1]
         
-        for index,row in data.iterrows():
-            heatmap_list = list(map(int, data.iat[index, 6].split(',')))
-            for i in range(0, len(heatmap_list)):
-                self.data.loc[index, str(i)] = int(heatmap_list[i])      
+        data_dictionary = {}
+        data2 = [[]]
         
-        self.row_count = self.data['0'].count()
-        self.column_count = len(self.data.columns)
+        for i in range(0, self.row_count):            
+            temp = heatmap_series[i].split(',')
+            heatmap_list = []
+            for j in range(0, len(temp)):
+                if temp[j] != '':
+                    heatmap_list.append(int(temp[j]))
+            
+            data2.append(heatmap_list)
+        
+        for i in range(0, len(data2[0])):
+            for j in range(0, len(data2)):
+                data_dictionary.update({str(i): data2[j][i]})
+        
+        data2 = pd.DataFrame(data = data_dictionary)        
+        data = pd.concat([data, data2], axis = 1)        
+        data = data.drop(columns='heatmap')
+        
         
         self.day_count = 0
         self.week_count = 0
@@ -46,14 +63,16 @@ class General(object):
         self.circulation_month = [0] * 31
         self.exhibition_month = [0] * 31
         
-        self.count_all_movement()
+        self.count_all_movement(data)
         print("ai", self.count_ai, "code", self.count_code, "vr", self.count_vr)
-        self.calculate_movement_over_time()
+        self.calculate_movement_over_time(data)
+        
+        
 
-    def count_all_movement(self):
+    def count_all_movement(self, data):
         for r in range(0, self.row_count):
             for c in range(0, self.column_count - 6):
-                value = self.data.iat[r, c + 6]
+                value = data.iat[r, c + 6]
                 if((c < 8) or (c >= 39 and c % 39 < 8) and (int(c / 39) < 12)):
                     self.count_ai += value
                     self.count_exhibition += value
@@ -66,7 +85,7 @@ class General(object):
                 else:
                     self.count_circulation += value
 
-    def calculate_movement_over_time(self):
+    def calculate_movement_over_time(self, data):
         day_index = 0
         week_index = 0
         month_index = 0
@@ -79,7 +98,7 @@ class General(object):
             vr_temp = 0
             
             for c in range(0, self.column_count - 6):
-                value = self.data.iat[r, c + 6]                
+                value = data.iat[r, c + 6]                
                 if((c < 8) or ((c >= 39 and c % 39 < 8) and (int(c / 39) < 12))):
                     exhibition_temp += value
                     ai_temp += value
@@ -98,14 +117,14 @@ class General(object):
             self.code_day[day_index] += code_temp
             self.vr_day[day_index] += vr_temp
             
-            week_index = self.data.iat[r, 2]             
+            week_index = data.iat[r, 2]             
             self.circulation_week[week_index] += circulation_temp
             self.exhibition_week[week_index] += exhibition_temp
             self.ai_week[week_index] += ai_temp
             self.code_week[week_index] += code_temp
             self.vr_week[week_index] += vr_temp
             
-            month_index = parse(self.data.iat[r, 1]).date().day - 1
+            month_index = parse(data.iat[r, 1]).date().day - 1
             self.circulation_month[month_index] += circulation_temp
             self.exhibition_month[month_index] += exhibition_temp
             self.ai_month[month_index] += ai_temp

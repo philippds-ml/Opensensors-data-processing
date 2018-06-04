@@ -38,7 +38,10 @@ class Opensensors(object):
                         if(len(data[o]['heatmap']) > 0):
                             
                             data[o].update({'x_res': data[o]['heatmap'][0]})
-                            data[o].update({'y_res': data[o]['heatmap'][1]}) 
+                            data[o].update({'y_res': data[o]['heatmap'][1]})
+                            
+                            x_res = data[o]['heatmap'][0]
+                            y_res = data[o]['heatmap'][1]
                                                         
                             heatmap_length = len(data[o]['heatmap'])
                             
@@ -93,8 +96,8 @@ class Opensensors(object):
                                 d[m]['heatmap'][i + 2] = 0
                                 #print("replace with 0 | y:", int(i / 39), " x:", i % 39)
                     
-                    d[m].update({'x_res': d[m]['heatmap'][0]})
-                    d[m].update({'y_res': d[m]['heatmap'][1]})
+                    d[m].update({'x_res': x_res})
+                    d[m].update({'y_res': y_res})
                                 
                     heat_item = ""
                     for i in range(2, heatmap_length):
@@ -113,8 +116,6 @@ class Opensensors(object):
         print("filling database gaps with dummy values...")
         # fill DB with dummy values
         heat_list = []
-        heat_list.append(x_res)
-        heat_list.append(y_res)
         heat_list += [0] * (heatmap_length - 2)
         
         dummy_heatmap_string = ""
@@ -132,8 +133,8 @@ class Opensensors(object):
             epoch_time = int(time.mktime(ht.timetuple()))                         
             dummy_values[i] = {'date': int(epoch_time)}
             dummy_values[i].update({'human_time': str(human_time)})
-            dummy_values[i].update({'x_res': heat_list[0]})
-            dummy_values[i].update({'y_res': heat_list[1]})
+            dummy_values[i].update({'x_res': x_res})
+            dummy_values[i].update({'y_res': y_res})
             
             dummy_values[i].update({'heatmap': dummy_heatmap_string})
             dayOfTheWeek = human_time.isoweekday()

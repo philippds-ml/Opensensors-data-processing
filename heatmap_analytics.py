@@ -1,17 +1,15 @@
 import math
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 class Heatmap(object):
     
-    def __init__(self, data):
+    data = pd.DataFrame()
+    
+    def __init__(self, data = pd.DataFrame()):
         self.data = data     
         self.row_count = len(data.index)
-        
-        for i in range(0, self.row_count):
-            heatmap_list = list(map(int, self.data.iat[i, 6].split(',')))
-            for j in range(0, len(heatmap_list)):
-                self.data.loc[i, j] = int(heatmap_list[i])
         
         self.data.drop('heatmap', axis=1, inplace=True)
         

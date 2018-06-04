@@ -7,13 +7,13 @@ from general_analytics import General
 from heatmap_analytics import Heatmap
 
 # pulling data and creating database
-table_name = 'os_reading_Reception'
+table_name = 'os_reading_'
 # 'AUB', 'Reception', 'Meeting'
-project = 'Reception'
-#osdp = Opensensors('2018-05-28', '2018-05-29', table_name, 'Reception')
+project = 'AUB'
+osdp = Opensensors('2018-02-02', '2018-02-10', table_name + project, project)
 
 # SQLite database to pandas dataframe
-conn = sqlite3.connect(table_name + ".sqlite")
+conn = sqlite3.connect(table_name + project + ".sqlite")
 data = pd.read_sql_query("SELECT * FROM " + project, conn)
 conn.close()
 #heat = data.iloc[:, 5:]
