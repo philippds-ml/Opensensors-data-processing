@@ -2,6 +2,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import operator
+from scipy import ndimage
 
 ########################## OUTLIERS ###################################################
 
@@ -85,9 +86,7 @@ class Outliers(object):
                 else:
                     temp_arr.append(self.data.iat[index[g], m])
                     index_x += 1
-            
-            heatmap_0 = np.array(arrs)
-            
+                        
             col = 1
             row = 1
             
@@ -96,30 +95,19 @@ class Outliers(object):
                 row = math.ceil(count / col)
             
             plt.subplot(row, col, g + 1)
-            plt.imshow(heatmap_0, cmap='hot', interpolation='gaussian')
+            
+            img = np.array(arrs)
+            nrows, ncols = img.shape
+            pixel_blur_factor = 4
+            sigma = (pixel_blur_factor * nrows / 100.0, pixel_blur_factor * ncols / 100.0)
+            img = ndimage.gaussian_filter(img, sigma=sigma)
+            
+            plt.imshow(img, cmap='hot', interpolation='gaussian')
      
             title = self.data.iat[index[g], 1] + " | " + str(self.outlier_flag[index[g]])        
             plt.title(title, loc = 'left', fontsize = 7)
             arrs = []
             temp_arr = []
-            
-            """
-            for i in range(0, self.column_count - 6):
-                if((i < 8) or ((i >= 39 and i % 39 < 8) and (int(i / 39) < 12))):
-                    plt.scatter(i % 39, int(i / 39), color = 'blue', s = 10)
-                
-                if(int(i / 39) >= 18 and i % 39 > 10 and i % 39 <= 25 and (int(i / 39) < 21 or i % 39 > 15 or i % 39 < 12)):
-                    plt.scatter(i % 39, int(i / 39), color = 'red', s = 10)
-                
-                if(int(i / 39) >= 10 and i % 39 > 25):
-                    plt.scatter(i % 39, int(i / 39), color = 'green', s = 10)
-            
-            plt.scatter(7, 4, color = 'cyan', s = 30)
-            plt.scatter(7, 14, color = 'cyan', s = 30)
-            plt.scatter(18, 11, color = 'cyan', s = 30)
-            """
-            
-            
     
         plt.show()
     

@@ -11,12 +11,13 @@ from data_preprocessing import preprocess
 table_name = 'os_reading_'
 # 'AUB', 'Reception', 'Meeting'
 # AUB first date: 2018-02-02
-# Reception first dat:
-# Meeting Room first date:
+# Reception first dat: 2018-02-27
+# Meeting Room first date: 2018-02-27
 
 project = 'Reception'
-osdp = Opensensors('2018-03-02', '2018-04-03', table_name + project, project)
-data = osdp.data
+
+# osdp = Opensensors('2018-02-27', '2018-05-05', table_name + project, project)
+# data = osdp.data
 
 # SQLite database to pandas dataframe
 conn = sqlite3.connect(table_name + project + ".sqlite")
@@ -25,7 +26,7 @@ conn.close()
 
 #heat = data.iloc[:, 5:]
 out = Outliers(data)
-out.plot(50)
+out.plot(5)
 
 g = General(data)
 g.plot_comparison_bars()
@@ -49,7 +50,7 @@ g.period_plot('day', 'code')
 g.period_plot('day', 'vr')
 
 ha = Heatmap(data)
-ha.calc_average_heatmap()
 ha.plot_average_heatmap()
-ha.plot_heatmap_range(10, 20)
 
+ha.plot_heatmap_range(0, 200)
+ha.plot_heatmap_stime(10, 670, 14)

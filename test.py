@@ -101,3 +101,11 @@ aaa = data.iloc[0,1:2]
 list1 = [[7,6,5],[3,2,1]]
 
 print(list1[0][1])
+
+
+from datetime import datetime
+from dateutil.parser import parse
+
+dt = "2018-03-02 00:00:00"
+
+dt = parse(dt)

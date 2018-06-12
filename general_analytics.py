@@ -105,7 +105,7 @@ class General(object):
                         self.count_exhibition += value
                     else:
                         self.count_circulation += value
-                
+                """
                 if(self.data.iat[r, 3] == 'Reception'):
                     # CIRCULATION
                     # MEETING TABLE
@@ -118,6 +118,7 @@ class General(object):
                     # MEETING CHAIRS
                     # CIRCULATION
                     # MEETING
+                """
 
     # TO DO:
     def calculate_movement_over_time(self, data):
