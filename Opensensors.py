@@ -35,9 +35,9 @@ class Opensensors(object):
             ed = start_date + timedelta(days = 1)
             try:
                 data = self.pull_data(sd.strftime('%Y-%m-%d'), ed.strftime('%Y-%m-%d'))
-                if(len(data) > 0):    
-                    for o in range(0, len(data)):
-                        if(len(data[o]['heatmap']) > 0):
+                if(len(data) > 0):
+                    for o in range(0, len(data)): # # 'AUB', 'Reception', 'Meeting', '4thFloor'
+                        if(len(data[o]['heatmap']) > 0 and (self.project == 'AUB' or self.project == 'Reception' or self.project == 'Meeting')):
                             self.x_res = data[o]['heatmap'][0]
                             self.y_res = data[o]['heatmap'][1]
                             self.heatmap_length = len(data[o]['heatmap']) - 2
@@ -145,16 +145,16 @@ class Opensensors(object):
         
         deviceId = ""
         
-        if(self.project == 'AUB'): deviceId = '5a5609dc1ac137000520d91f'
-        if(self.project == 'Reception'): deviceId = '5a5609981ac137000520d91c'
-        if(self.project == 'Meeting'): deviceId = '5a7bfe2b3865840006b930b4'
+        #if(self.project == 'AUB'): deviceId = '5a5609dc1ac137000520d91f'
+        #if(self.project == 'Reception'): deviceId = '5a5609981ac137000520d91c'
+        #if(self.project == 'Meeting'): deviceId = '5a7bfe2b3865840006b930b4'
         
         parameters = {'fromDate': from_d,
                       'toDate': to_d,
                       'projectUri': 'zaha-hadid',
                       'deviceId': deviceId,
                       'size': '500',
-                      'type': 'modcamHeatmap',
+                      'type': '',
                       'cursor': ''}
         data = requests.get(url_GPM, headers = headers_GPM, params = parameters).json()['items']        
         return data
